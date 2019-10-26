@@ -259,6 +259,17 @@ def install_confirm():
     addClient(response['bot']['bot_access_token'],response['access_token'],veritoken, response['team_id'])
     return "Ok"
 
+# URI for sending alert to the admin channel
+@app.route("/alert/admin", methods=['POST'])
+def alert_admin():
+    team_id = request.form['team_id']
+    message = request.form['message']
+    if request.form['token'] != veritoken:
+        print("Unauthorized mesage detected")
+        return 401
+    if not notifyAdmins(message, team_id):
+        return "Error in sending message", 400
+
 ''' Function to send a message to a channel
     Input:
         message: Message to send

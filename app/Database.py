@@ -21,6 +21,12 @@ class status_code(enum.Enum):
     PINK = 4
     RED = 5
 
+class request_status(enum.Enum):
+    REQUESTED = 1
+    ACCEPTED = 2
+    DECLINED = 3
+    IMPLEMENTED = 4
+
 class Workspaces(db.Model):
     def __init__(self, b_tok, a_tok, v_tok, team):
         self.bot_token = b_tok
@@ -59,6 +65,7 @@ class Users(db.Model):
     last_hint = db.Column(db.DateTime(), nullable=True)
     commands = db.relationship('Commands', backref='user', lazy=True)
     updates = db.relationship('Updates', backref='user', lazy=True)
+    domain_username = db.Column(db.String(50), nullable=True)
 
 class Agents(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -121,3 +128,43 @@ class Hints(db.Model):
     category = db.Column(db.Integer, db.ForeignKey('hint_categories.id'), nullable=False)
     seq_num = db.Column(db.Integer, nullable=False)
     hint = db.Column(db.Text, nullable=False)
+
+# Models for the change request module
+class dnsRequest(db.Model):
+
+    def __init__(self,userid,ipaddr,status):
+        self.user_id = userid
+        self.ipaddr = ipaddr
+        self.status = status
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    ipaddr = db.Column(db.String(50), nullable=False)
+    request_status = db.Column('request_status', db.Enum(request_status), nullable=False)
+    
+
+class dhcpRequest(db.Model):
+
+    def __init__(self,userid,mac,status):
+        self.user_id = userid
+        self.mac = mac
+        self.status = status
+        self.ipaddr = "none"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    mac = db.Column(db.String(50), nullable=False)
+    ipaddr = db.Column(db.String(50), nullable=True)
+    request_status = db.Column('request_status', db.Enum(request_status), nullable=False)
+
+class registerRequest(db.Model):
+
+    def __init__(self,userid,username,status):
+        self.user_id = userid
+        self.registered_username = username
+        self.status = status
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    registered_username = db.Column(db.String(50), nullable=False)
+    request_status = db.Column('request_status', db.Enum(request_status), nullable=False)

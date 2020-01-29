@@ -35,78 +35,77 @@ class InfraManager(InfraModule):
             self.send_error(None, channel, user, team_id)
             return "Status returned"
         
-        # dns
-        # dhcp
-        # register
-        # list
-            # dns
-            # dhcp
-        # accept
-            # dns
-            # dhcp
-        # decline
-            # dns
-            # dhcp
 
-        if message.startswith("dns "):
+        if message.startswith("dns "): # DNS Command
             remainder = message[len("dns "):]
             ipcheck = re.search("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", remainder)
             if(not ipcheck):
                 self.send_error("Invalid IP address", channel, user, team_id)
                 return "Invalid IP Address"
-            self.add_request("DNS", team_id, remainder)
-            # if remainder.startswith("YELLOW") and curStatus.status == statusType.GREEN:
-            #     #curStatus.status = statusType.YELLOW
-            #     #InfraBot.notifyAdmins(InfraBot.getUserName(user, team_id) + " set status to YELLOW", team_id)
-            # else:
-            #     if not InfraBot.checkPermission(user, "admin", team_id):
-            #         InfraBot.sendHelp("Access Denied", channel, user, team_id)
-            #         return "Access Denied"
-                
-            #     if remainder == "GREEN":
-            #         curStatus.status = statusType.GREEN
-            #     elif remainder == "ORANGE":
-            #         curStatus.status = statusType.ORANGE
-            #     elif remainder == "PINK":
-            #         curStatus.status = statusType.PINK
-            #     elif remainder == "RED":
-            #         curStatus.status = statusType.RED
-            #     else:
-            #         InfraBot.sendHelp("Invalid status.", channel, user, team_id)
-            #         return "Invalid status selected"
+            reqid = self.add_request("DNS", team_id, user, remainder)
+            return "DNS request added with ID: " + str(reqid)
+            # InfraBot.getUserName(user, team_id)
 
-            #     InfraBot.notifyAdmins(InfraBot.getUserName(user, team_id) + " set status set to " + curStatus.status.name, team_id)
+        elif message.startswith("dhcp "): # DHCP Command
+            remainder = message[len("dhcp "):]
+            maccheck = re.search("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", remainder)
+            if(not maccheck):
+                self.send_error("Invalid MAC address", channel, user, team_id)
+                return "Invalid MAC address"
+            reqid = self.add_request("DHCP", team_id, user, remainder)
+            return "DHCP request added with ID: " + str(reqid)
 
-            # if InfraBot.checkDM(channel, team_id):
-            #     InfraBot.sendMessage("Status: " + curStatus.status.name, channel, team_id)
-            # else:
-            #     InfraBot.sendEphemeral("Status: " + curStatus.status.name, channel, user, team_id)
-            
-            # Database.db.session.commit()
-            return InfraBot.getUserName(user, team_id) + " set status to " + curStatus.status.name
-        elif message.startswith("dhcp "):
-            return "asdf"
-        elif message.startswith("register "):
-            return "asdf"
-        elif message.startswith("list "):
+        elif message.startswith("register "): # Register Username command
+            remainder = message[len("register "):]
+            reqid = self.add_request("REGISTER", team_id, user, remainder)
+            return "Username registering request added with ID: " + str(reqid)
+
+        elif message.startswith("list "): # List command
             remainder = message[len("list "):].upper()
+            data = ""
             if remainder.startswith("DNS"):
+                entries = Database.ZoneRequest.query.all()
+                for x in range(len(entries)):
+                    data = data + ""
                 return "asdf"
+                """ data = "" # prepare string
+    entries = Database.dhcpRequest.query.filter_by(status = reqStatus).all() # get all DHCP requests with given status
+    for x in range(len(entries)):
+        try:
+            # check changedby and changedbyid to see if it's null
+            changedby = str(entries[x].actionuser)
+            changedbyid = str(entries[x].actionid)
+        except:
+            changedby = "none"
+            changedbyid = "none"
+        try:
+            # ensure ip isn't null
+            ip = str(entries[x].ipaddr)
+        except:
+            ip = "none"
+        # append line containing request data to the string
+        data = data + "ID: " + str(entries[x].id) + " user: " + entries[x].name + " (" + entries[x].userid + ") " + " MAC: " + entries[x].mac + " IP: " + ip + " Status: " + entries[x].status + " ChangedBy: " + changedby + "(" + changedbyid + ") \n"
+    if data == "": # no requests with given status
+        data = "No Pending DHCP Requests with status: " + reqStatus    
+    return data # return string to be printed out """
             elif remainder.startswith()"DHCP"):
                 return "asdf"
-        elif message.startswith("accept "):
+
+        elif message.startswith("accept "): # Accept request command
             remainder = message[len("accept "):].upper()
             if remainder.startswith("DNS"):
                 return "asdf"
             elif remainder.startswith()"DHCP"):
                 return "asdf"
-        elif message.startswith("decline "):
+
+        elif message.startswith("decline "): # Decline request command
             remainder = message[len("decline "):].upper()
             if remainder.startswith("DNS"):
                 return "asdf"
             elif remainder.startswith()"DHCP"):
                 return "asdf"
-        elif message.startswith("help"):
+
+        elif message.startswith("help"): # Help command
             self.send_error(None, channel, user, team_id)
         else:
             self.send_error("Invalid command", channel, user, team_id)
@@ -123,12 +122,24 @@ class InfraManager(InfraModule):
             self.workspaces[team_id] = dbWorkspace.id
             return True
     
-    def add_request(self, request_type, team_id, request_data):
-        if request_data = "DNS":
-            return "asdf"
-        elif request_data = "DHCP":
-            return "asdf"
-        return "ERROR"
+    # Take type of request and create a request with the request_data set to the correct field. Returns the request ID
+    def add_request(self, request_type, team_id, user_id, request_data):
+        if request_type = "DNS":
+            new_request = Database.ZoneRequest(self.workspaces[team_id], userid, request_data) # need to add workspace to the DB file
+            Database.db.session.add(new_request)
+            Database.db.session.commit()
+            return new_request.id
+        elif request_type = "DHCP":
+            new_request = Database.DHCPRequest(self.workspaces[team_id], userid, request_data) # need to add workspace to the DB file
+            Database.db.session.add(new_request)
+            Database.db.session.commit()
+            return new_request.id
+        elif request_type = "REGISTER":
+            new_request = Database.UsernameRequest(self.workspaces[team_id], userid, request_data) # need to add workspace to the DB file
+            Database.db.session.add(new_request)
+            Database.db.session.commit()
+            return new_request.id
+        return -1
 
     def send_error(self, message, channel, user, team_id):
         messageString = ""
